@@ -10,11 +10,12 @@ import numpy as np
 from matplotlib.figure import Figure
 import base64
 from io import BytesIO
+import logging
 
 dates = {}
 app = Flask(__name__)
 
-@app.route('/form')
+@app.route('/')
 def form():
     #stock = ["IBM", "AAPL", "MSFT"]
     past_duration = ["6mo", "1y"]
@@ -93,4 +94,5 @@ def health():
     return 'ok'
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port='7000')
+    app.run(host='0.0.0.0', port='5000', debug=True)
+    

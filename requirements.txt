@@ -1,0 +1,10 @@
+flask
+onnxruntime
+onnx
+yfinance
+pandas_datareader
+pandas
+scikit-learn
+numpy
+matplotlib
+gunicorn
