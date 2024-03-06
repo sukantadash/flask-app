@@ -15,7 +15,7 @@ import logging
 dates = {}
 app = Flask(__name__)
 
-@app.route('/')
+@app.route('/form')
 def form():
     #stock = ["IBM", "AAPL", "MSFT"]
     past_duration = ["6mo", "1y"]
