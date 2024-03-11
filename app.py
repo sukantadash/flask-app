@@ -1,7 +1,5 @@
 from flask import Flask, request, render_template, redirect
 from onnxruntime import InferenceSession
-from onnxruntime.datasets import get_example
-import onnx
 import yfinance as yfin
 from pandas_datareader import data as pdr
 import pandas as pd
@@ -11,8 +9,13 @@ from matplotlib.figure import Figure
 import base64
 from io import BytesIO
 import logging
+import requests
+import json
+import os
 
-dates = {}
+
+INFERENCE_ENDPOINT = os.environ.get("MODEL_URL")
+
 app = Flask(__name__)
 
 @app.route('/form')
@@ -50,19 +53,23 @@ def data():
         # generate the forecasts
         X_ = dataset[- n_lookback:]  # last available input sequence
         X_ = X_.reshape(1, n_lookback, 1)
-        X_ = np.array(X_, dtype=np.float32)
-        filename = "future_trend.onnx"
-        sess = InferenceSession(filename)
-        print("----")
-        print(sess.get_inputs())
-        print(sess.get_outputs())
-        input_name = sess.get_inputs()[0].name
-        output_name = sess.get_outputs()[0].name
-        result = sess.run([output_name], {input_name: X_})
-        print("==")
-        Y_ = np.array(result).reshape(-1, 1)
+        X = X_.astype(np.float32)
+        X = X.tolist()
+        json_data = {
+                "inputs": [
+                {
+                "name": "lstm_8_input",
+                "datatype": "FP32",
+                "shape": [1,60,1],
+                "data": X
+                }
+            ]
+        }
+        response = requests.post(INFERENCE_ENDPOINT, json=json_data)
+        result = response.json()
+        result_data = result['outputs'][0]['data']
+        Y_ = np.array(result_data).reshape(-1, 1)
         Y_ = scaler.inverse_transform(Y_)
-        predicted_stock_price = Y_
         # organize the results in a data frame
         df_past = df[['Close']].reset_index()
         df_past.rename(columns={'index': 'Date', 'Close': 'Actual'}, inplace=True)
@@ -94,5 +101,5 @@ def health():
     return 'ok'
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port='5000', debug=True)
+    app.run(host='0.0.0.0', port='8000', debug=True)
     
