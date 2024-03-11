@@ -18,7 +18,7 @@ INFERENCE_ENDPOINT = os.environ.get("MODEL_URL")
 
 app = Flask(__name__)
 
-@app.route('/form')
+@app.route('/')
 def form():
     #stock = ["IBM", "AAPL", "MSFT"]
     past_duration = ["6mo", "1y"]
