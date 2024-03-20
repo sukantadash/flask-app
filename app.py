@@ -14,7 +14,8 @@ import json
 import os
 
 
-INFERENCE_ENDPOINT = os.environ.get("MODEL_URL")
+#INFERENCE_ENDPOINT = os.environ.get("MODEL_URL")
+INFERENCE_ENDPOINT = "https://stock-predict-model-stock-predict.apps.rosa-9m6tt.m01r.p1.openshiftapps.com/v2/models/stock-predict-model/infer"
 
 app = Flask(__name__)
 
@@ -58,7 +59,7 @@ def data():
         json_data = {
                 "inputs": [
                 {
-                "name": "lstm_8_input",
+                "name": "lstm_input",
                 "datatype": "FP32",
                 "shape": [1,60,1],
                 "data": X
@@ -67,6 +68,7 @@ def data():
         }
         response = requests.post(INFERENCE_ENDPOINT, json=json_data)
         result = response.json()
+        print(result)
         result_data = result['outputs'][0]['data']
         Y_ = np.array(result_data).reshape(-1, 1)
         Y_ = scaler.inverse_transform(Y_)
@@ -101,5 +103,5 @@ def health():
     return 'ok'
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port='5000')
+    app.run(host='0.0.0.0', port='9000')
     
