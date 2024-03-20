@@ -1,4 +1,9 @@
 <form action="/data" method = "POST">
+    <p>Select the stock ticker, It has to be the same, which was used in Model Training</p><select name="ticker" method="GET" action="/">
+        {% for item in stock %}
+            <option value="{{item}}" SELECTED>{{item}}</option>"
+        {% endfor %}
+    </select>
     <p>Past Duration of Stock Price</p><select name="past_duration" method="GET" action="/">
         {% for item in past_duration %}
             <option value="{{item}}" SELECTED>{{item}}</option>"

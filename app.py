@@ -21,10 +21,10 @@ app = Flask(__name__)
 
 @app.route('/')
 def form():
-    #stock = ["IBM", "AAPL", "MSFT"]
+    stock = ["IBM", "AAPL", "MSFT"]
     past_duration = ["6mo", "1y"]
     #future_duration = ["30","40"]
-    return render_template('form.html', past_duration=past_duration)
+    return render_template('form.html', past_duration=past_duration, stock=stock)
 
 @app.route('/data', methods = ['POST', 'GET'])
 def data():
@@ -34,7 +34,7 @@ def data():
         form_data = request.form
         dates = request.form
         app.logger.info(request.form)
-        df = yfin.download(tickers='IBM', period=form_data['past_duration'])
+        df = yfin.download(tickers=form_data['ticker'], period=form_data['past_duration'])
         dataset = df['Close'].fillna(method='ffill')
         dataset = dataset.values.reshape(-1, 1)
         scaler = MinMaxScaler(feature_range=(0, 1))
@@ -87,7 +87,7 @@ def data():
         # Generate the figure **without using pyplot**.
         fig = Figure()
         ax = fig.subplots()
-        fig.suptitle("IBM")
+        fig.suptitle(form_data['ticker'])
         ax.plot(results)
         # Save it to a temporary buffer.
         buf = BytesIO()
