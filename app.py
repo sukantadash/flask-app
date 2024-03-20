@@ -14,8 +14,8 @@ import json
 import os
 
 
-#INFERENCE_ENDPOINT = os.environ.get("MODEL_URL")
-INFERENCE_ENDPOINT = "https://stock-predict-model-stock-predict.apps.rosa-9m6tt.m01r.p1.openshiftapps.com/v2/models/stock-predict-model/infer"
+INFERENCE_ENDPOINT = os.environ.get("MODEL_URL")
+#INFERENCE_ENDPOINT = "https://stock-predict-model-stock-predict.apps.rosa-9m6tt.m01r.p1.openshiftapps.com/v2/models/stock-predict-model/infer"
 
 app = Flask(__name__)
 
