@@ -1,0 +1,152 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: cc-fraud-single-model-runtime-pod-1
+  namespace: cc-fraud-single-model
+spec:
+  nodeSelector:
+    region: primary
+  restartPolicy: Always
+  serviceAccountName: default
+  imagePullSecrets:
+    - name: default-dockercfg-bwvzh
+  priority: 0
+  schedulerName: default-scheduler
+  enableServiceLinks: false
+  terminationGracePeriodSeconds: 300
+  preemptionPolicy: PreemptLowerPriority
+  securityContext:
+    seLinuxOptions:
+      level: 's0:c40,c10'
+    fsGroup: 1001580000
+  containers:
+    - resources:
+        limits:
+          cpu: '1'
+          memory: 1Gi
+        requests:
+          cpu: 100m
+          memory: 100Mi
+      terminationMessagePath: /dev/termination-log
+      name: storage-initializer
+      env:
+        - name: AWS_CA_BUNDLE_CONFIGMAP
+          value: odh-kserve-custom-ca-bundle
+        - name: STORAGE_CONFIG
+          valueFrom:
+            secretKeyRef:
+              name: storage-config
+              key: aws-connection-my-storage
+        - name: CA_BUNDLE_CONFIGMAP_NAME
+          value: odh-kserve-custom-ca-bundle
+        - name: CA_BUNDLE_VOLUME_MOUNT_POINT
+          value: /etc/ssl/custom-certs
+      securityContext:
+        capabilities:
+          drop:
+            - KILL
+            - MKNOD
+            - SETGID
+            - SETUID
+            - SYS_CHROOT
+        runAsUser: 1001580001
+        runAsNonRoot: true
+        allowPrivilegeEscalation: false
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - name: kserve-provision-location
+          mountPath: /mnt/models
+        - name: cabundle-cert
+          readOnly: true
+          mountPath: /etc/ssl/custom-certs
+        - name: kube-api-access-kjndc
+          readOnly: true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      terminationMessagePolicy: FallbackToLogsOnError
+      image: 'quay.io/modh/kserve-storage-initializer@sha256:3c4e69f594748ff64c98420da9b1770d4633023f5687019b83991cdbb35222cf'
+      args:
+        - 's3://my-storage/models/fraud'
+        - /mnt/models
+  serviceAccount: default
+  volumes:
+    - name: workload-socket
+      emptyDir: {}
+    - name: credential-socket
+      emptyDir: {}
+    - name: workload-certs
+      emptyDir: {}
+    - name: istio-envoy
+      emptyDir:
+        medium: Memory
+    - name: istio-data
+      emptyDir: {}
+    - name: istio-podinfo
+      downwardAPI:
+        items:
+          - path: labels
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels
+          - path: annotations
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.annotations
+        defaultMode: 420
+    - name: istio-token
+      projected:
+        sources:
+          - serviceAccountToken:
+              audience: istio-ca
+              expirationSeconds: 43200
+              path: istio-token
+        defaultMode: 420
+    - name: istiod-ca-cert
+      configMap:
+        name: istio-ca-root-cert
+        defaultMode: 420
+    - name: shm
+      emptyDir:
+        medium: Memory
+        sizeLimit: 2Gi
+    - name: kube-api-access-kjndc
+      projected:
+        sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              name: kube-root-ca.crt
+              items:
+                - key: ca.crt
+                  path: ca.crt
+          - downwardAPI:
+              items:
+                - path: namespace
+                  fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+          - configMap:
+              name: openshift-service-ca.crt
+              items:
+                - key: service-ca.crt
+                  path: service-ca.crt
+        defaultMode: 420
+    - name: kserve-provision-location
+      emptyDir: {}
+    - name: cabundle-cert
+      configMap:
+        name: odh-kserve-custom-ca-bundle
+        defaultMode: 420
+  dnsPolicy: ClusterFirst
+  tolerations:
+    - key: node.kubernetes.io/not-ready
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 300
+    - key: node.kubernetes.io/unreachable
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 300
+    - key: node.kubernetes.io/memory-pressure
+      operator: Exists
+      effect: NoSchedule
